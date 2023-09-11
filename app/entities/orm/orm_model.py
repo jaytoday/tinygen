@@ -1,40 +1,28 @@
 # coding: utf-8
 from datetime import datetime
-
-from sqlalchemy import ForeignKey, text
-from sqlalchemy.dialects.mysql import DATETIME
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from typing import Optional
+from pydantic import BaseModel, Field
 
 
-class Base(DeclarativeBase):
-    pass
+class User(BaseModel):
+    id: Optional[int] = Field(None, primary_key=True, unique=True)
+    username: str
+    email: str
+    is_deleted: bool = Field(default=False)
+    create_time: datetime = Field(default_factory=datetime.utcnow)
+    update_time: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        table = "users"
 
 
-class User(Base):
-    __tablename__ = "user"
+class Post(BaseModel):
+    id: Optional[int] = Field(None, primary_key=True, unique=True)
+    content: str
+    user_id: int = Field(..., index=True)
+    is_deleted: bool = Field(default=False)
+    create_time: datetime = Field(default_factory=datetime.utcnow)
+    update_time: datetime = Field(default_factory=datetime.utcnow)
 
-    id: Mapped[int] = mapped_column(primary_key=True, unique=True)
-    username: Mapped[str]
-    email: Mapped[str]
-    is_deleted: Mapped[bool] = mapped_column(server_default=text("'0'"))
-    create_time: Mapped[datetime] = mapped_column(DATETIME(fsp=6), server_default=text("CURRENT_TIMESTAMP(6)"))
-    update_time: Mapped[datetime] = mapped_column(
-        DATETIME(fsp=6), server_default=text("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)")
-    )
-
-    posts: Mapped[list["Post"]] = relationship(back_populates="user")
-
-
-class Post(Base):
-    __tablename__ = "post"
-
-    id: Mapped[int] = mapped_column(primary_key=True, unique=True)
-    content: Mapped[str]
-    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), index=True)
-    is_deleted: Mapped[bool] = mapped_column(server_default=text("'0'"))
-    create_time: Mapped[datetime] = mapped_column(DATETIME(fsp=6), server_default=text("CURRENT_TIMESTAMP(6)"))
-    update_time: Mapped[datetime] = mapped_column(
-        DATETIME(fsp=6), server_default=text("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)")
-    )
-
-    user: Mapped["User"] = relationship(back_populates="posts")
+    class Config:
+        table = "posts"
