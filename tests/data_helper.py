@@ -1,20 +1,18 @@
 import os
-
 import pandas as pd
-from sqlalchemy import create_engine, text
-from sqlalchemy.engine import Engine
-
+from supabase_py import create_client, Client
 from app.config import settings
 
-connection_url = settings.get_db_url()
+supabase_url = settings.SUPABASE_URL
+supabase_key = settings.SUPABASE_KEY
 data_directory = os.path.join(os.path.dirname(__file__), "data")
 
 
 class DataHelper:
-    """Helper to manage test data im the database"""
+    """Helper to manage test data in the database"""
 
-    def __init__(self, connection_url: str = connection_url, data_directory: str = data_directory) -> None:
-        self.engine: Engine = create_engine(connection_url)
+    def __init__(self, supabase_url: str = supabase_url, supabase_key: str = supabase_key, data_directory: str = data_directory) -> None:
+        self.client: Client = create_client(supabase_url, supabase_key)
         self.data_base_dir = data_directory
 
     def insert_from_csv(
@@ -25,7 +23,7 @@ class DataHelper:
         quotechar='"',
         encoding="utf8",
     ):
-        """Insert in a table the data read from a CSV file in a sudirectory of test data directory"""
+        """Insert in a table the data read from a CSV file in a subdirectory of test data directory"""
         file_path = os.path.join(self.data_base_dir, subdir_file_path)
         df = pd.read_csv(
             filepath_or_buffer=file_path,
@@ -33,18 +31,12 @@ class DataHelper:
             quotechar=quotechar,
             encoding=encoding,
         )
-        with self.engine.begin() as con:
-            df.to_sql(table_name, con=con, index=False, if_exists="append")
-
-    def truncate_table(self, table_name: str):
-        with self.engine.begin() as con:
-            con.execute(text(f"TRUNCATE TABLE {table_name}"))
+        for _, row in df.iterrows():
+            data = row.to_dict()
+            self.client.table(table_name).insert(data)
 
     def delete_rows(self, table_name: str, ids: list[int]):
-        ids_joined = ",".join([str(i) for i in ids])
-        with self.engine.begin() as con:
-            con.execute(text(f"DELETE FROM {table_name} WHERE id in ({ids_joined})"))
+        self.client.table(table_name).delete().in_('id', ids).execute()
 
     def delete_all_rows(self, table_name: str):
-        with self.engine.begin() as con:
-            con.execute(text(f"DELETE FROM {table_name}"))
+        self.client.table(table_name).delete().execute()
