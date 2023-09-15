@@ -82,13 +82,12 @@ class CodeGenOrchestrator:
                 code_diff_chunks.append(code_diff_chunk)
 
             code_diff = "\n".join(code_diff_chunks)
+            history.insert(0, CodeGenHistoryItem(plan=plan, review=review, code_diff=code_diff))
             previous_steps = plan.steps
 
         remove_temp_dir(repo_dir)  # cleanup
 
         logging.info(f"Returning code diff: {code_diff}")
-
-        history.insert(0, CodeGenHistoryItem(plan=plan, review=review, code_diff=code_diff))
 
         return CodeGenResult(
             code_diff=code_diff,
