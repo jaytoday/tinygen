@@ -45,7 +45,7 @@ def generate_review_and_plan_prompt(
         - comment: a string with more detailed feedback describing the quality of the code diff and why the score was given. 
     - plan: None if the generated review score is at least {SUCCESS_SCORE_THRESHOLD}, or a CodeGenPlan object with the following fields:
         - steps: a list of strings describing the steps needed to implement the code diff to best satisfy the provided prompt. Return an empty list if no steps are needed or if unable to determine the steps needed.
-        - file_paths: a list of strings representing file paths from the Repository File Map that need to be modified to implement a code diff satisfying the provided prompt. The file paths should be relative to the root of the repository, and include any files if unsure if they should be included so they can be further examined. This list should never include files that aren't listed in the Repository File Map. Return an empty list if no files need to be modified or if unable to determine the files needed.
+        - file_paths: a list of strings representing file paths from the Repository File Map that need to be modified to implement a code diff satisfying the provided prompt. The file paths should be relative to the root of the repository, and include any files if unsure if they should be included so they can be further examined. If the plan requires new files to be created, include the paths and filenames of the new files to be created. Return an empty list if no files need to be modified or if unable to determine the files needed.
 
     User Prompt:
     ```

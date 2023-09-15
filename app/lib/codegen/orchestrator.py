@@ -64,6 +64,8 @@ class CodeGenOrchestrator:
 
             planner = CodeGenPlanner(self.prompt, repo_file_map, code_diff, previous_steps, self.openai_model)
             review, plan = planner.review_and_plan()
+            logging.info(f"Review: {review}")
+            logging.info(f"Plan: {plan}")
 
             if (review and review.score >= SUCCESS_SCORE_THRESHOLD) or \
                     (plan and len(plan.steps) == 0) or \
@@ -74,6 +76,7 @@ class CodeGenOrchestrator:
 
             file_contents = fetch_files(repo_dir, plan.file_paths)
             chunked_contents = chunk_file_contents(file_contents)
+            logging.info(f"Created {len(chunked_contents)} content chunks for the following files: {plan.file_paths}.")
 
             code_diff_chunks: List[str] = []
             for content_chunk in chunked_contents:
@@ -86,6 +89,17 @@ class CodeGenOrchestrator:
             previous_steps = plan.steps
 
         remove_temp_dir(repo_dir)  # cleanup
+
+        if attempts > MAX_PLANNING_ATTEMPTS:
+            # Find the index of the history item with the highest score
+            max_score_index = max(
+                range(len(history)), 
+                key=lambda i: getattr(getattr(history[i], 'review', None), 'score', 0)
+            )     
+            # Use the code_diff from the history item referred to by the item with the highest review score
+            next_index = max_score_index + 1
+            if next_index < len(history):
+                code_diff = history[next_index].code_diff
 
         logging.info(f"Returning code diff: {code_diff}")
 

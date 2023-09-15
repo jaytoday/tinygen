@@ -36,12 +36,12 @@ def fetch_files(root: str, paths: List[str]) -> str:
     contents_list = []
     for item_path in paths:
         full_item_path = os.path.join(root, item_path)
+        contents_list.append(f"\n--- File: {item_path} ---\n")
         try:
             with open(full_item_path, 'r', encoding='utf-8', errors='ignore') as file:
-                contents_list.append(f"\n--- File: {item_path} ---\n")
                 contents_list.append(file.read())
         except FileNotFoundError:
-            logging.error(f"File not found: {full_item_path}")
+            logging.info(f"File not found: {full_item_path}. This is likely a new file to be added in the code diff.")
     return "".join(contents_list)
 
 
